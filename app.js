@@ -16,10 +16,6 @@ mongoose.connect(
   }
 )
 
-app.get('/', (req, res) => {
-  res.send('Hello World')
-})
-
 //Middlewares
 app.use(cors())
 app.use(express.json())

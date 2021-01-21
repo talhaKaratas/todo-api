@@ -37,4 +37,16 @@ router.get('/get-tasks', verify, async (req, res) => {
   }
 })
 
+router.patch('/completed', verify, async (req, res) => {
+  try {
+    const completeTask = await User.updateOne(
+      { _id: req.user._id, 'tasks._id': req.body.taskId },
+      { $set: { 'tasks.$.completed': req.body.isComplete } }
+    )
+    res.send(completeTask)
+  } catch (err) {
+    res.status(500).send({ message: err.message })
+  }
+})
+
 module.exports = router
