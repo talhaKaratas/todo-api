@@ -4,11 +4,18 @@ const verify = require('./verifyToken')
 
 router.patch('/write', verify, async (req, res) => {
   try {
-    const updateTasks = await User.updateOne(
+    const updateTasks = await User.findOneAndUpdate(
       { _id: req.user._id },
-      { $push: { tasks: [{ task: req.body.task }] } }
+      { $push: { tasks: [{ task: req.body.task }] } },
+      { new: true }
     )
-    res.send(updateTasks)
+    const dates = updateTasks.tasks.map((x) => {
+      return new Date(x.date)
+    })
+    const latest = new Date(Math.max.apply(null, dates))
+    const index = updateTasks.tasks.findIndex((x) => x.date === latest)
+    const task = updateTasks.tasks.splice(index, 1)
+    res.send(...task)
   } catch (err) {
     res.status(500).send({ message: err })
   }
