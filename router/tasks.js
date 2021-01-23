@@ -6,7 +6,7 @@ router.patch('/write', verify, async (req, res) => {
   try {
     const updateTasks = await User.findOneAndUpdate(
       { _id: req.user._id },
-      { $push: { tasks: [{ task: req.body.task }] } },
+      { $push: { tasks: [{ task: req.body.task, date: new Date() }] } },
       { new: true }
     )
     const dates = updateTasks.tasks.map((x) => {
