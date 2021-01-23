@@ -54,6 +54,16 @@ router.post('/login', async (req, res) => {
   res.header('auth_token', token).send({ token })
 })
 
+router.delete('/delete', verify, async (req, res) => {
+  const userId = req.user._id
+  try {
+    const deletedUser = await User.deleteOne({ _id: userId })
+    res.send(deletedUser)
+  } catch (err) {
+    res.status(401).send({ message: err.message })
+  }
+})
+
 router.get('/info', verify, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._id })
