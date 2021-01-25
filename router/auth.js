@@ -3,7 +3,12 @@ const User = require('../models/User')
 const bicrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const verify = require('./verifyToken')
-const { registerValidation, loginValidation } = require('../validation')
+const {
+  registerValidation,
+  loginValidation,
+  userInfoValidation,
+  passwordValidation
+} = require('../validation')
 
 router.post('/register', async (req, res) => {
   //Validation
@@ -64,10 +69,65 @@ router.delete('/delete', verify, async (req, res) => {
   }
 })
 
+// Get User Name and Surname
 router.get('/info', verify, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user._id })
     res.send({ name: user.name, surname: user.surname })
+  } catch (err) {
+    res.status(500).send({ message: err.message })
+  }
+})
+
+//Change registered User Name or Surname
+router.patch('/change-name-or-surname', verify, async (req, res) => {
+  //Validation
+  const { error } = userInfoValidation(req.body)
+  if (error) return res.status(401).send({ message: error.details[0].message })
+
+  try {
+    const updatedUser = await User.updateOne(
+      { _id: req.user._id },
+      {
+        $set: {
+          name: req.body.name,
+          surname: req.body.surname
+        }
+      }
+    )
+    res.send(updatedUser)
+  } catch (err) {
+    res.status(500).send({ message: err.message })
+  }
+})
+
+//Change registered user password
+router.patch('/change-password', verify, async (req, res) => {
+  //Validation
+  const { error } = passwordValidation({ password: req.body.newPassword })
+  if (error) return res.status(401).send({ message: error.details[0].message })
+
+  const user = await User.findOne({ _id: req.user._id })
+  if (!user) res.status(500).send({ message: 'Unknown error' })
+
+  //compare password
+  const validPass = await bicrypt.compare(req.body.oldPassword, user.password)
+  if (!validPass) return res.status(400).send({ message: 'Password is wrong' })
+
+  //Hash new password
+  const hash = await bicrypt.genSalt(10)
+  const newHashPassword = await bicrypt.hash(req.body.newPassword, hash)
+
+  try {
+    const updatePassword = await User.updateOne(
+      { _id: req.user._id },
+      {
+        $set: {
+          password: newHashPassword
+        }
+      }
+    )
+    res.send(updatePassword)
   } catch (err) {
     res.status(500).send({ message: err.message })
   }
